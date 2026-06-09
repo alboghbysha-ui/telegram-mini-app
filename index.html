@@ -1,65 +1,95 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Telegram Mini App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>مینی اپ من - Monetag</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Monetag SDK - zone ID 11122863 -->
-  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
-  <script>
-    // تعریف تابع تبلیغ Monetag
-    window.show_11122863 = function() {
-      return new Promise((resolve, reject) => {
-        // اینجا کد واقعی Monetag میاد (با همون ساختاری که خودشون میدن)
-        const AdController = window.Adsgram?.init({ blockId: "11122863" });
-        if (AdController) {
-          AdController.show().then(resolve).catch(reject);
-        } else {
-          reject(new Error("Monetag not loaded"));
-        }
-      });
-    };
-  </script>
-
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: Arial;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
       text-align: center;
-      background: #f5f5f5;
-      margin-top: 50px;
-    }
-    .box {
-      background: white;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       padding: 20px;
-      margin: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
+    
+    .box {
+      background: rgba(255,255,255,0.95);
+      padding: 30px 20px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 350px;
+    }
+    
+    h2 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+    
+    .score-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      border-radius: 15px;
+      margin: 20px 0;
+    }
+    
+    .score-label {
+      color: rgba(255,255,255,0.8);
+      font-size: 14px;
+    }
+    
+    #score {
+      font-size: 48px;
+      font-weight: bold;
+      color: white;
+    }
+    
     button {
-      padding: 12px 24px;
+      padding: 14px 28px;
       margin: 10px;
       border: none;
-      background: #0088cc;
+      background: #28a745;
       color: white;
-      border-radius: 8px;
+      border-radius: 50px;
       cursor: pointer;
       font-size: 16px;
-    }
-    button:active {
-      background: #006699;
-    }
-    #score {
-      font-size: 28px;
       font-weight: bold;
-      color: #0088cc;
+      transition: transform 0.2s, opacity 0.2s;
     }
-    .reward-btn {
-      background: #28a745;
+    
+    button:active {
+      transform: scale(0.97);
     }
-    .reward-btn:active {
-      background: #1e7e34;
+    
+    button:disabled {
+      opacity: 0.6;
+      transform: none;
+    }
+    
+    .status {
+      font-size: 12px;
+      color: #666;
+      margin-top: 15px;
+      padding: 8px;
+      background: #f0f0f0;
+      border-radius: 10px;
+    }
+    
+    .coin {
+      font-size: 20px;
     }
   </style>
 </head>
@@ -68,64 +98,142 @@
 
   <div class="box">
     <h2>🤖 مینی اپ من</h2>
-    <p>امتیاز شما:</p>
-    <div id="score">0</div>
     
-    <button id="watchAdBtn" class="reward-btn">🎁 تماشای تبلیغ + کسب امتیاز</button>
-    <button onclick="alert('سلام! به مینی اپ خوش اومدی')">📢 کلیک کن</button>
+    <div class="score-box">
+      <div class="score-label">امتیاز شما</div>
+      <div id="score">0</div>
+    </div>
+    
+    <button id="rewardBtn">🎁 تماشای تبلیغ + 10 امتیاز</button>
+    
+    <div class="status" id="status">
+      ✅ آماده | تبلیغات فعال
+    </div>
   </div>
 
+  <!-- کد Monetag - In-App Interstitial (خودکار) -->
   <script>
-    // منتظر میمونیم تا صفحه کامل لود بشه
+    // تبلیغ خودکار میان صفحه‌ای (In-App)
+    if (typeof show_11122863 !== 'undefined') {
+      show_11122863({
+        type: 'inApp',
+        inAppSettings: {
+          frequency: 2,
+          capping: 0.1,
+          interval: 30,
+          timeout: 5,
+          everyPage: false
+        }
+      });
+    }
+  </script>
+
+  <script>
+    // کد اصلی اپلیکیشن
     document.addEventListener('DOMContentLoaded', function() {
-      const btn = document.getElementById('watchAdBtn');
+      const rewardBtn = document.getElementById('rewardBtn');
       const scoreSpan = document.getElementById('score');
+      const statusDiv = document.getElementById('status');
       let score = 0;
       
-      // وقتی کاربر روی دکمه کلیک کرد
-      btn.addEventListener('click', function() {
-        // غیرفعال کردن دکمه تا زمانی که تبلیغ تموم بشه
-        btn.disabled = true;
-        btn.innerText = '⏳ در حال بارگذاری تبلیغ...';
+      // راه‌اندازی تلگرام
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        Telegram.WebApp.setHeaderColor('bg_color');
+      }
+      
+      // تابع نمایش تبلیغ تشویقی (طبق کدی که خودت دادی)
+      function showRewardedAd() {
+        return new Promise((resolve, reject) => {
+          // چک میکنیم تابع show_11122863 وجود داره؟
+          if (typeof show_11122863 === 'undefined') {
+            reject(new Error('Monetag SDK loaded yet'));
+            statusDiv.innerHTML = '⚠️ در حال بارگذاری SDK... دوباره تلاش کن';
+            return;
+          }
+          
+          // نمایش تبلیغ تشویقی با کد خود مونتاگ
+          // این دقیقاً همون کدیه که خودت فرستادی
+          show_11122863().then(() => {
+            // بعد از دیدن کامل تبلیغ، جایزه بده
+            resolve(true);
+          }).catch((error) => {
+            // اگه تبلیغ نشون داده نشد یا کاربر بستش
+            reject(error);
+          });
+        });
+      }
+      
+      // دکمه تبلیغ تشویقی
+      rewardBtn.addEventListener('click', async function() {
+        // غیرفعال کردن دکمه تا تبلیغ تموم بشه
+        rewardBtn.disabled = true;
+        rewardBtn.innerText = '⏳ در حال بارگذاری تبلیغ...';
+        statusDiv.innerHTML = '🔄 در حال دریافت تبلیغ تشویقی...';
         
-        // نمایش تبلیغ با استفاده از تابع Monetag
-        show_11122863().then(() => {
-          // بعد از دیدن کامل تبلیغ، امتیاز بده
+        try {
+          // صبر می‌کنیم تا SDK آماده بشه (حداکثر 2 ثانیه)
+          await new Promise((resolve) => {
+            let waited = 0;
+            const checkInterval = setInterval(() => {
+              if (typeof show_11122863 !== 'undefined') {
+                clearInterval(checkInterval);
+                resolve();
+              }
+              waited += 100;
+              if (waited >= 2000) {
+                clearInterval(checkInterval);
+                resolve();
+              }
+            }, 100);
+          });
+          
+          // نمایش تبلیغ
+          await showRewardedAd();
+          
+          // اعطای جایزه
           score += 10;
           scoreSpan.innerText = score;
+          statusDiv.innerHTML = '✅ +10 امتیاز! ممنون از دیدن تبلیغ';
           
-          // ویبره گوشی (اگر داخل تلگرام باشه)
+          // ویبره و اعلان تلگرام
           if (window.Telegram && Telegram.WebApp) {
             Telegram.WebApp.HapticFeedback.impactOccurred('light');
             Telegram.WebApp.showAlert('🎉 10 امتیاز به حساب تو اضافه شد!');
-          } else {
-            alert('🎉 تبریک! 10 امتیاز گرفتی.');
           }
           
-          // دکمه رو دوباره فعال کن
-          btn.disabled = false;
-          btn.innerText = '🎁 تماشای تبلیغ + کسب امتیاز';
-          
-        }).catch((error) => {
-          // اگه تبلیغ نشون داده نشد یا کاربر بستش
-          console.log('خطا در نمایش تبلیغ:', error);
-          btn.disabled = false;
-          btn.innerText = '🎁 دوباره تلاش کن';
+        } catch (error) {
+          console.log('Error:', error);
+          statusDiv.innerHTML = '⚠️ تبلیغ نمایش داده نشد. دوباره تلاش کن';
           
           if (window.Telegram && Telegram.WebApp) {
-            Telegram.WebApp.showAlert('⚠️ تبلیغ نمایش داده نشد. دوباره تلاش کن.');
-          } else {
-            alert('مشکلی پیش اومد، دوباره تلاش کن.');
+            Telegram.WebApp.showAlert('⚠️ تبلیغ نمایش داده نشد، دوباره تلاش کن');
           }
+        } finally {
+          // فعال کردن دوباره دکمه
+          rewardBtn.disabled = false;
+          rewardBtn.innerText = '🎁 تماشای تبلیغ + 10 امتیاز';
           
-          // بعد از 2 ثانیه متن دکمه رو برگردون
+          // برگردوندن متن وضعیت بعد 2 ثانیه
           setTimeout(() => {
-            btn.innerText = '🎁 تماشای تبلیغ + کسب امتیاز';
+            if (statusDiv.innerHTML.includes('⚠️') || statusDiv.innerHTML.includes('🔄')) {
+              statusDiv.innerHTML = '✅ آماده | برای دریافت امتیاز کلیک کن';
+            }
           }, 2000);
-        });
+        }
       });
+      
+      // اعلام آمادگی
+      setTimeout(() => {
+        if (typeof show_11122863 !== 'undefined') {
+          statusDiv.innerHTML = '✅ آماده | روی دکمه سبز کلیک کن';
+        } else {
+          statusDiv.innerHTML = '⚠️ SDK در حال بارگذاری... چند ثانیه صبر کن';
+        }
+      }, 1000);
     });
   </script>
 
 </body>
-  </html>
+</html>
